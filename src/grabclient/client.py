@@ -2,6 +2,8 @@ import base64
 import hashlib
 import hmac
 import json
+import os
+
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
@@ -15,6 +17,10 @@ from grabclient.exceptions import APINotContactable, APIResponseNotJson, APIErro
 from grabclient.helper import snake_to_camel
 from grabclient.requests import DeliveryQuoteRequest, DeliveryRequest
 from grabclient.responses import DeliveryQuoteResponse, DeliveryResponse
+from urllib.parse import urlparse
+import re
+from grabclient.constant import REDIS_KEY_ACCESS_TOKEN
+import redis
 
 __all__ = ['GrabClient', ]
 
@@ -22,12 +28,34 @@ T = TypeVar('T')
 
 _log = getLogger()
 
-
 class GrabClient:
 
-    def __init__(self, credentials: Tuple[str, str], sandbox_mode=False):
+    def __init__(self,
+                 credentials: Tuple[str, str],
+                 grab_base_url: str,
+                 grab_oauth_url: str,
+                 redis_url: str,
+                 sandbox_mode=False,
+                 redis_password=None):
         self.credentials = credentials
         self.sandbox_mode = sandbox_mode
+        # self.base_url = os.getenv("GRAB_SANDBOX_URL") if sandbox_mode else os.getenv("GRAB_URL")
+        self.base_url = grab_base_url
+        # self.oauth_url = os.getenv("GRAB_OAUTH_URL")
+        self.oauth_url = grab_oauth_url
+        self.redis_url = redis_url
+        self.redis_password = redis_password
+        self.redis_connection = None
+        self.init_redis_connection()
+
+    def init_redis_connection(self):
+        url_parsed = urlparse(self.redis_url)
+
+        redis_port = int(url_parsed.port)
+        redis_host = url_parsed.hostname
+        redis_db = int(re.sub(r'\W+', '', url_parsed.path))
+        self.redis_connection = redis.Redis(host=redis_host, port=redis_port, db=redis_db,
+                                            password=self.redis_password)
 
     @property
     def verify_ssl(self):
@@ -36,21 +64,13 @@ class GrabClient:
         """
         return not self.sandbox_mode
 
-    @property
-    def base_url(self):
-        """
-
-        :return:
-        """
-        return 'https://partner-api.stg-myteksi.com' if self.sandbox_mode else 'https://partner-api.grab.com'
-
     def check_rate(self, req: DeliveryQuoteRequest) -> DeliveryQuoteResponse:
         """POST /deliveries/quotes"""
-        return self._http_post_json('/grab-express/v1/deliveries/quotes', req, DeliveryQuoteResponse)
+        return self._http_post_json('deliveries/quotes', req, DeliveryQuoteResponse)
 
     def book_delivery(self, req: DeliveryRequest) -> DeliveryResponse:
         """Booking API: POST /deliveries"""
-        return self._http_post_json('/grab-express/v1/deliveries', req, DeliveryResponse)
+        return self._http_post_json('deliveries', req, DeliveryResponse)
 
     def track_delivery(self):
         """Tracking API: GET /deliveries/{deliveryID}/tracking tyg"""
@@ -58,11 +78,11 @@ class GrabClient:
 
     def cancel_delivery(self, delivery_id: str):
         """Cancel API: /deliveries/{deliveryID}"""
-        return self._http_delete_json(f'/grab-express/v1/deliveries/{delivery_id}')
+        return self._http_delete_json(f'deliveries/{delivery_id}')
 
     def info_delivery(self, delivery_id: str) -> DeliveryResponse:
         """GET deliveries/{DeliveryID}"""
-        return self._http_get_json(f'/grab-express/v1/deliveries/{delivery_id}', DeliveryResponse)
+        return self._http_get_json(f'deliveries/{delivery_id}', DeliveryResponse)
 
     def _headers(self):
         return {
@@ -77,7 +97,7 @@ class GrabClient:
         """
         headers = self._headers()
         headers['Content-Type'] = ""
-        headers['Authorization'] = self.calculate_hash('', url_path, headers, 'GET')
+        headers['Authorization'] = self.get_access_token()
         try:
             url = f"{self.base_url}{url_path}"
             http_response = requests.get(
@@ -105,7 +125,7 @@ class GrabClient:
         headers = self._headers()
         headers['Content-Type'] = 'application/json'
         data = self._serialize_request(payload)
-        headers['Authorization'] = self.calculate_hash(data, url_path, headers, 'POST')
+        headers['Authorization'] = self.get_access_token()
         try:
             url = f"{self.base_url}{url_path}"
             http_response = requests.post(
@@ -184,6 +204,26 @@ class GrabClient:
         :return:
         """
         return json.dumps(self._marshal_request(payload))
+
+    def get_cache_access_token(self):
+        access_token = self.redis_connection.get(REDIS_KEY_ACCESS_TOKEN)
+        return access_token
+
+    def get_access_token(self):
+        if self.get_cache_access_token():
+            return self.get_cache_access_token()
+        else:
+            http_response = requests.post(os.getenv("GRAB_OAUTH_URL"), data={
+                "client_id": self.credentials[0],
+                "client_secret": self.credentials[1],
+                "grant_type": "client_credentials",
+                "scope": "grab_express.partner_deliveries"
+            })
+            json_response = http_response.json()
+            self.redis_connection.set(REDIS_KEY_ACCESS_TOKEN,
+                                      json_response["token_type"]+" "+json_response["access_token"],
+                                      ex=json_response["expires_in"])
+            return json_response["token_type"]+" "+json_response["access_token"]
 
     def calculate_hash(self, data: str, url: str, headers: dict, method: str):
         """

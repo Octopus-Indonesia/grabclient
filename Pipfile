@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 requests="==2.20.0"
+redis="==3.0.0"
 
 [dev-packages]
 behave="==1.2.6"
