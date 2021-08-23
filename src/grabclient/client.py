@@ -11,7 +11,6 @@ from http import HTTPStatus
 from logging import getLogger
 from typing import Tuple, Union, TypeVar, Type
 
-import dotenv
 import requests
 
 from grabclient.exceptions import APINotContactable, APIResponseNotJson, APIErrorResponse
@@ -29,28 +28,34 @@ T = TypeVar('T')
 
 _log = getLogger()
 
-dotenv.load_dotenv()
-
 class GrabClient:
 
-    def __init__(self, credentials: Tuple[str, str], sandbox_mode=False):
+    def __init__(self,
+                 credentials: Tuple[str, str],
+                 grab_base_url: str,
+                 grab_oauth_url: str,
+                 redis_url: str,
+                 sandbox_mode=False,
+                 redis_password=None):
         self.credentials = credentials
         self.sandbox_mode = sandbox_mode
-        self.base_url = os.getenv("GRAB_SANDBOX_URL") if sandbox_mode else os.getenv("GRAB_URL")
-        self.oauth_url = os.getenv("GRAB_OAUTH_URL")
+        # self.base_url = os.getenv("GRAB_SANDBOX_URL") if sandbox_mode else os.getenv("GRAB_URL")
+        self.base_url = grab_base_url
+        # self.oauth_url = os.getenv("GRAB_OAUTH_URL")
+        self.oauth_url = grab_oauth_url
+        self.redis_url = redis_url
+        self.redis_password = redis_password
         self.redis_connection = None
         self.init_redis_connection()
 
     def init_redis_connection(self):
-        redis_url = os.getenv("REDIS_URL")
-        url_parsed = urlparse(redis_url)
+        url_parsed = urlparse(self.redis_url)
 
         redis_port = int(url_parsed.port)
         redis_host = url_parsed.hostname
         redis_db = int(re.sub(r'\W+', '', url_parsed.path))
         self.redis_connection = redis.Redis(host=redis_host, port=redis_port, db=redis_db,
-                                            password=os.getenv("REDIS_PASSWORD"))
-
+                                            password=self.redis_password)
 
     @property
     def verify_ssl(self):
@@ -120,7 +125,7 @@ class GrabClient:
         headers = self._headers()
         headers['Content-Type'] = 'application/json'
         data = self._serialize_request(payload)
-        headers['Authorization'] = self.calculate_hash(data, url_path, headers, 'POST')
+        headers['Authorization'] = self.get_access_token()
         try:
             url = f"{self.base_url}{url_path}"
             http_response = requests.post(
