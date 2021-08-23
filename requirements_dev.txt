@@ -9,7 +9,7 @@ Sphinx==1.8.1
 twine==1.12.1
 pytest==3.8.2
 pytest-runner==4.2
-
+redis==3.0.0
 # runtime required deps
 requests==2.20.0
 
