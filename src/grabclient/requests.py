@@ -1,6 +1,7 @@
 from typing import List
 
-from grabclient.common import Origin, Package, Destination, ServiceType, CashOnDelivery, Sender, Recipient
+from grabclient.common import Origin, Package, Destination, \
+    ServiceType, CashOnDelivery, Sender, Recipient, PaymentMethod
 
 
 class DeliveryQuoteRequest:
@@ -24,7 +25,7 @@ class DeliveryRequest:
         'merchant_order_id',
         'service_type',
         'packages',
-        'cash_on_delivery',
+        'payment_method',
         'sender',
         'recipient',
         'origin',
@@ -35,7 +36,7 @@ class DeliveryRequest:
                  merchant_order_id: str,
                  service_type: ServiceType,
                  packages: List[Package],
-                 cash_on_delivery: CashOnDelivery,
+                 payment_method: PaymentMethod,
                  sender: Sender,
                  recipient: Recipient,
                  origin: Origin,
@@ -43,7 +44,7 @@ class DeliveryRequest:
         self.merchant_order_id = merchant_order_id
         self.service_type = service_type
         self.packages = packages
-        self.cash_on_delivery = cash_on_delivery
+        self.payment_method = payment_method
         self.sender = sender
         self.recipient = recipient
         self.origin = origin

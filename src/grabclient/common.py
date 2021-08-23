@@ -155,3 +155,8 @@ class Courier(NamedTuple):
     phone: str
     picture_url: str
     vehicle: Vehicle
+
+
+class PaymentMethod(Enum):
+    cash = "CASH"
+    cash_less = "CASHLESS"

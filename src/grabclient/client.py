@@ -72,9 +72,9 @@ class GrabClient:
         """Booking API: POST /deliveries"""
         return self._http_post_json('deliveries', req, DeliveryResponse)
 
-    def track_delivery(self):
+    def track_delivery(self, order_id):
         """Tracking API: GET /deliveries/{deliveryID}/tracking tyg"""
-        pass
+        return self._http_get_json(f'deliveries/{order_id}', DeliveryResponse)
 
     def cancel_delivery(self, delivery_id: str):
         """Cancel API: /deliveries/{deliveryID}"""
