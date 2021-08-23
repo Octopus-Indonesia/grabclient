@@ -102,13 +102,13 @@ class Quotes(NamedTuple):
 
 class Contact(NamedTuple):
     first_name: str
-    last_name: str
-    title: str
+    # last_name: str
+    # title: str
     company_name: str
     email: str
     phone: str
     sms_enabled: bool = True
-    instruction: str = ''
+    # instruction: str = ''
 
 
 class Sender(Contact):
