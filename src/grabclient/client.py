@@ -139,7 +139,7 @@ class GrabClient:
                 raise APIErrorResponse.from_api_json(http_response=http_response)
             return response_class.from_api_json(http_response.json())
         except requests.RequestException as e:
-            raise APINotContactable from e
+            raise APINotContactable(e)
         except ValueError as e:
             raise APIResponseNotJson from e
 

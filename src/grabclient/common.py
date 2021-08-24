@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum
 from typing import NamedTuple, List
 
@@ -59,7 +60,6 @@ class DestinationClass(NamedTuple):
     address: str
     keywords: str
     coordinates: Coordinates
-    extra: dict = {}
 
 
 class Origin(DestinationClass):
@@ -160,3 +160,8 @@ class Courier(NamedTuple):
 class PaymentMethod(Enum):
     cash = "CASH"
     cash_less = "CASHLESS"
+
+
+class Schedule(NamedTuple):
+    pickup_time_from: str
+    pickup_time_to: str
