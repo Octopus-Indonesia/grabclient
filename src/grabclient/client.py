@@ -74,7 +74,7 @@ class GrabClient:
 
     def track_delivery(self, order_id):
         """Tracking API: GET /deliveries/{deliveryID}/tracking tyg"""
-        return self._http_get_json(f'deliveries/{order_id}', DeliveryResponse)
+        return self._http_get_json(f'deliveries/{order_id}/tracking', DeliveryResponse)
 
     def cancel_delivery(self, delivery_id: str):
         """Cancel API: /deliveries/{deliveryID}"""
@@ -106,7 +106,7 @@ class GrabClient:
                 timeout=5
             )
             _log.info(f'{datetime.now().isoformat()}: GRAB {url} {http_response.status_code} {http_response.text}')
-            if http_response.status_code is not HTTPStatus.OK:
+            if http_response.status_code != HTTPStatus.OK:
                 raise APIErrorResponse.from_api_json(http_response=http_response)
             return response_class.from_api_json(http_response.json())
         except requests.RequestException as e:
@@ -160,7 +160,7 @@ class GrabClient:
                 timeout=5
             )
             _log.info(f'{datetime.now().isoformat()}: GRAB {url} {http_response.status_code} {http_response.text}')
-            if http_response.status_code is not HTTPStatus.NO_CONTENT:
+            if http_response.status_code != HTTPStatus.NO_CONTENT:
                 raise APIErrorResponse.from_api_json(http_response=http_response)
             return http_response
         except requests.RequestException as e:
