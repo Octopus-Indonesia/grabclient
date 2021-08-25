@@ -10,11 +10,12 @@ class DeliveryQuoteRequest:
     )
 
     def __init__(self,
-                 service_type: ServiceType,
                  packages: List[Package],
                  origin: Origin,
-                 destination: Destination):
-        self.service_type = service_type
+                 destination: Destination,
+                 service_type: ServiceType = None):
+        if service_type:
+            self.service_type = service_type
         self.origin = origin
         self.destination = destination
         self.packages = packages
