@@ -13,9 +13,8 @@ class DeliveryQuoteRequest:
                  packages: List[Package],
                  origin: Origin,
                  destination: Destination,
-                 service_type: ServiceType = None):
-        if service_type:
-            self.service_type = service_type
+                 service_type: ServiceType):
+        self.service_type = service_type
         self.origin = origin
         self.destination = destination
         self.packages = packages
