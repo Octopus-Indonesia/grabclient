@@ -17,7 +17,7 @@ class CurrencyCode(Enum):
 class ServiceType(Enum):
     instant = "INSTANT"
     same_day = "SAME_DAY"
-
+    empty = ""
 
 class InsuranceType(Enum):
     basic = "BASIC"
