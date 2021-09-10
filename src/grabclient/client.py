@@ -209,17 +209,21 @@ class GrabClient:
         access_token = self.redis_connection.get(REDIS_KEY_ACCESS_TOKEN)
         return access_token
 
+    def request_access_token(self):
+        http_response = requests.post(os.getenv("GRAB_OAUTH_URL"), data={
+            "client_id": self.credentials[0],
+            "client_secret": self.credentials[1],
+            "grant_type": "client_credentials",
+            "scope": "grab_express.partner_deliveries"
+        })
+        json_response = http_response.json()
+        return json_response
+
     def get_access_token(self):
         if self.get_cache_access_token():
             return self.get_cache_access_token()
         else:
-            http_response = requests.post(os.getenv("GRAB_OAUTH_URL"), data={
-                "client_id": self.credentials[0],
-                "client_secret": self.credentials[1],
-                "grant_type": "client_credentials",
-                "scope": "grab_express.partner_deliveries"
-            })
-            json_response = http_response.json()
+            json_response = self.request_access_token()
             self.redis_connection.set(REDIS_KEY_ACCESS_TOKEN,
                                       json_response["token_type"]+" "+json_response["access_token"],
                                       ex=json_response["expires_in"])
