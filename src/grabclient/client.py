@@ -96,7 +96,7 @@ class GrabClient:
         :return:
         """
         headers = self._headers()
-        headers['Content-Type'] = ""
+        headers['Content-Type'] = "application/json"
         headers['Authorization'] = self.get_access_token()
         try:
             url = f"{self.base_url}{url_path}"
@@ -150,8 +150,8 @@ class GrabClient:
         :return:
         """
         headers = self._headers()
-        headers['Content-Type'] = ""
-        headers['Authorization'] = self.calculate_hash('', url_path, headers, 'DELETE')
+        headers['Content-Type'] = "application/json"
+        headers['Authorization'] = self.get_access_token()
         try:
             url = f"{self.base_url}{url_path}"
             http_response = requests.delete(
