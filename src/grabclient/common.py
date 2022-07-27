@@ -109,7 +109,7 @@ class Contact(NamedTuple):
     email: str
     phone: str
     sms_enabled: bool = True
-    # instruction: str = ''
+    instruction: str = ''
 
 
 class Sender(Contact):
